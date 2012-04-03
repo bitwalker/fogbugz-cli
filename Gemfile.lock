@@ -1,0 +1,20 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    active_support (3.0.0)
+      activesupport (= 3.0.0)
+    activesupport (3.0.0)
+    commander (4.1.2)
+      highline (~> 1.6.11)
+    crack (0.3.1)
+    highline (1.6.11)
+    ruby-fogbugz (0.1.1)
+      crack
+
+PLATFORMS
+  x86-mingw32
+
+DEPENDENCIES
+  active_support
+  commander
+  ruby-fogbugz
