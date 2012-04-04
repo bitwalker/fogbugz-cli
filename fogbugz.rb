@@ -4,7 +4,12 @@ require 'rubygems'
 require 'commander/import'
 require 'fogbugz'
 require 'active_support/inflector'
+require 'rconfig'
 
+# Import configuration
+RConfig.config_paths = ['#{APP_ROOT}/config']
+
+# Define program parameters
 program :name,           'FogBugz Command Line Client'
 program :version,        '1.0.0'
 program :description,    'Manage FogBugz cases from the command line. Ideal for batch processing.'
@@ -195,20 +200,18 @@ private
   # Authenticate fogbugz client to server. Cache auth token for reuse.
   ###############
   def authenticate
-    # Authenticate
-    #auth_email = ask("What is your FogBugz email?")
-    @auth_email = 'paul.schoenfelder@protolabs.com'
-    #auth_pass  = password "What is your FogBugz password?", '*'
-    @auth_pass  = 'pq92!cb'
+    @fogbugz_url = RConfig.fogbugz.server.address || ask("What is the URL of your FogBugz server?")
+    @auth_email  = RConfig.fogbugz.user.email     || ask("What is your FogBugz email?")
+    @auth_pass   = RConfig.fogbugz.user.password  || ask("What is your FogBugz password?")
 
     # Cache the authentication token
     if @token.nil?
-      client = Fogbugz::Interface.new(:email => @auth_email, :password => @auth_pass, :uri => 'http://fogbugz')
+      client = Fogbugz::Interface.new(:email => @auth_email, :password => @auth_pass, :uri => @fogbugz_url)
       client.authenticate
       @token = client.token
       client
     else
-      client = Fogbugz::Interface.new(:token => @token, :uri => 'http://fogbugz')
+      client = Fogbugz::Interface.new(:token => @token, :uri => @fogbugz_url)
     end
   end
 

@@ -1,0 +1,6 @@
+server:
+  address: http://fogbugz # Can be any URL, use HTTPS when possible
+
+user:
+  email: test@test.com
+  password: testpass
