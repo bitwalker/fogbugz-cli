@@ -59,19 +59,38 @@ command :list do |c|
     list_options = {}
 
     unless args.empty?
-      case args.join
-      when "statuses"
+      case args.join.to_sym
+      when :statuses
         if options.resolved
           list_options['fResolved'] = 1
         end
         unless options.category.empty?
           list_options['ixCategory'] = options.category
         end
-        statuses = list("statuses", list_options)
+        statuses = list(:statuses, list_options)
         statuses.each do |status|
           rows << [ status['sStatus'], status['ixStatus'], status['ixCategory'] ]
         end
         print_table ['Status', 'StatusID', 'CategoryID'], rows
+      when :people
+        people = list(:people)
+        people.each do |person|
+          email = person['sEmail'].length > 45 ? person['sEmail'][0..45] + '...' : person['sEmail']
+          rows << [ person['sFullName'], email, person['fAdministrator'], person['dtLastActivity'] ]
+        end
+        print_table ['Name', 'Email', 'Admin?', 'Last Active'], rows
+      when :projects
+        projects = list(:projects)
+        projects.each do |project|
+          rows << [ project['ixProject'], project['sProject'], project['sPersonOwner'], project['sEmail'], project['sPhone'] ]
+        end
+        print_table ['ID', 'Project', 'Owner', 'Email', 'Phone'], rows
+      when :categories
+        categories = list(:categories)
+        categories.each do |category|
+          rows << [ category['ixCategory'], category['sPlural'] ]
+        end
+        print_table ['ID', 'Category'], rows
       else
         print_message "This type of list is not supported yet.", :error
       end
@@ -270,7 +289,7 @@ private
     command = "list#{type.capitalize}".to_sym
     client = authenticate
     results = client.command(command, options)
-    results = results[type][type.singularize] || []
+    results = results[type.to_s][type.to_s.singularize] || []
   end
 
   ###############
