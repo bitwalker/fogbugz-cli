@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem 'ruby-fogbugz'
-gem 'commander'
-gem 'active_support'
-gem 'rconfig'
+gem 'ruby-fogbugz',   '>= 0.1.1'
+gem 'commander',      '>= 4.1.2'
+gem 'active_support', '>= 3.0.0'
+gem 'rconfig',        '>= 0.3.3'
