@@ -4,3 +4,10 @@ server:
 user:
   email: test@test.com
   password: testpass
+
+output:
+  progress: true
+  colorize: true
+
+cases:
+  default_columns: "ixBug,ixBugParent,ixBugChildren,fOpen,sTitle,sPersonAssignedTo,sEmailAssignedTo,sStatus"
