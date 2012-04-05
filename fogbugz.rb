@@ -384,9 +384,6 @@ private
   # Takes an array of headings and an array of rows, and prints a table
   ###############
   def print_table(headings, rows)
-    table = Terminal::Table.new do |t|
-      :headings => headings
-      :rows => rows
-    end
+    table = Terminal::Table.new :headings => headings, :rows => rows
     puts table
   end
