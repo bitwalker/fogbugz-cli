@@ -42,7 +42,6 @@ flag (fogbugz list --help, for example).
 
 == TODO
 
-* Prettier formatting of output
 * fogbugz list only lists statuses currently, support all list types
 * Additional configuration options for resolve, close, reopen
 * Create case functionality
