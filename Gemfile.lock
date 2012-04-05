@@ -8,6 +8,7 @@ GEM
       highline (~> 1.6.11)
     crack (0.3.1)
     highline (1.6.11)
+    i18n (0.6.0)
     rconfig (0.3.3)
       activesupport (>= 2.2.2)
     ruby-fogbugz (0.1.1)
@@ -21,6 +22,7 @@ PLATFORMS
 DEPENDENCIES
   active_support (>= 3.0.0)
   commander (>= 4.1.2)
+  i18n (>= 0.6.0)
   rconfig (>= 0.3.3)
   ruby-fogbugz (>= 0.1.1)
-  terminal-table
+  terminal-table (>= 1.4.5)
