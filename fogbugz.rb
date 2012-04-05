@@ -2,6 +2,7 @@
 
 require 'rubygems'
 require 'commander/import'
+require 'terminal-table'
 require 'fogbugz'
 require 'active_support/inflector'
 require 'rconfig'
@@ -29,19 +30,10 @@ command :search do |c|
   # Behavior
   c.action do |args, options|
     client = authenticate
-    args = args || []
-    # Specify columns
-    cols  = "ixBug,ixBugParent,ixBugChildren,fOpen,sTitle,sPersonAssignedTo,sEmailAssignedTo,sStatus"
-    cases = search(args.join, cols)
-    if options.open then cases.reject! {|c| c['fOpen'] == 'false'} end
-    unless cases.empty?
-      puts # Empty string for formatting
-      cases.each do |c|
-        p "#{c['ixBug']} - #{c['sStatus']} - #{c['sTitle']} - Assigned To: #{c['sPersonAssignedTo']}"
-      end
-    else
-      p 'No open cases were found that match your query.'
-    end
+    args = args || [] # Empty args defaults to returning current active case list
+    # Search
+    cases = if options.open then search_all(args.join) else search_open(args.join) end
+    show_cases cases
   end
 end
 
@@ -62,26 +54,30 @@ command :list do |c|
     options.default :category => ''
 
     client = authenticate
+
+    p
+    headings = [] # Used for printing a table of results
+    rows = [] # Used for printing a table of results
+    list_options = {}
+
     unless args.empty?
-      puts
       case args.join
       when "statuses"
-        opts = {}
         if options.resolved
-          opts['fResolved'] = 1
+          list_options['fResolved'] = 1
         end
         unless options.category.empty?
-          opts['ixCategory'] = options.category
+          list_options['ixCategory'] = options.category
         end
-        statuses = list("statuses", opts)
+        statuses = list("statuses", list_options)
         statuses.each do |status|
-          p "#{status['sStatus']} - #{status['ixStatus']} - Category: #{status['ixCategory']}"
+          rows << [ status['sStatus'], status['ixStatus'], status['ixCategory'] ]
         end
+        print_table ['Status', 'StatusID', 'CategoryID'], rows
       else
         p "This type of list is not supported yet."
       end
     else
-      puts
       p "You should specify a list type."
     end
   end
@@ -106,20 +102,19 @@ command :resolve do |c|
     options.default :status => 45 # Fixed
 
     client = authenticate
-    if (!args.nil? and !args.empty?)
-      # Request results
-      cases = search(args.join, "ixBug,fOpen,sEmailAssignedTo")
-      cases = cases.reject {|c| c['fOpen'] == 'false' and c['sEmailAssignedTo'] != @auth_email}
+
+    p
+    unless args.empty?
+      # Get open cases assigned to me
+      cases = search_open(args.join, nil, true)
+
       unless cases.empty?
-        resolved = []
-        progress cases do |c|
-          client.command(:resolve, :ixBug => c['ixBug'], :ixStatus => options.status)
-          if options.close
-            client.command(:close, :ixBug => c['ixBug'])
-          end
-          resolved.push(c['ixBug'])
-        end
+        resolved = resolve cases, options.status
         p 'The following cases were resolved: ' + resolved.join
+        if options.close
+          closed = close cases
+          p 'The following cases were closed: ' + closed.join
+        end
       else
         p 'No open cases were found that match that query.'
       end
@@ -141,16 +136,14 @@ command :close do |c|
   # Behavior
   c.action do |args, options|
     client = authenticate
-    if (!args.nil? and !args.empty?)
-      # Request results
-      cases = search(args.join, "ixBug,fOpen,sEmailAssignedTo")
-      cases = cases.reject {|c| c['fOpen'] == 'false' and c['sEmailAssignedTo'] != @auth_email}
+
+    p
+    unless args.empty?
+      # Get open cases assigned to me that match the query
+      cases = search_open(args.join, nil, true)
+
       unless cases.empty?
-        closed = []
-        progress cases do |c|
-          client.command(:close, :ixBug => c['ixBug'])
-          closed.push(c['ixBug'])
-        end
+        closed = close cases
         p 'The following cases were closed: ' + closed.join
       else
         p 'No open cases were found that match that query.'
@@ -173,15 +166,11 @@ command :reopen do |c|
   # Behavior
   c.action do |args, options|
     client = authenticate
-    if (!args.nil? and !args.empty?)
-      cases = search(args.join, "ixBug,fOpen")
-      cases = cases.reject { |c| c['fOpen'] == 'true' }
+
+    unless args.empty?
+      cases = search_closed(args.join)
       unless cases.empty?
-        reopened = []
-        progress cases do |c|
-          client.command(:reopen, :ixBug => c['ixBug'])
-          reopened.push(c['ixBug'])
-        end
+        reopened = reopen cases
         p 'The following cases were reopened: ' + reopened.join
       else
         p 'No closed cases were found that match that query.'
@@ -221,11 +210,12 @@ private
   # Execute a simple find. If query is malformed, it will return all cases that belong to the caller.
   # Params:
   #   query: A string to search for (can be a case, csv of cases, general string)
-  #   columns: A comma separated list of columns to retrieve, defaults to the bug ID
+  #   columns: A comma separated list of columns to retrieve (optional)
+  #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search(query, columns)
+  def search_all(query, columns = RConfig.fogbugz.cases.default_columns, mine = false)
     client = authenticate
-    results = client.command(:search, :q => query, :cols => columns || "ixBug")
+    results = client.command(:search, :q => query, :cols => columns)
 
     unless results.nil?
       # Determine if this is a single result or many
@@ -233,7 +223,11 @@ private
       cases = results['cases']['case'] || []
       if cases.is_a? Hash
         cases = [].push(cases)
-        cases
+      end
+
+      # Filter for cases that belong to me if requested
+      if mine
+        cases.reject! {|c| c['sEmailAssignedTo'] != @auth_email }
       else
         cases
       end
@@ -242,9 +236,157 @@ private
     end
   end
 
+  ###############
+  # Search Open
+  # -------------
+  # Execute a simple find. Returns only cases that are active.
+  # Params:
+  #   query: A string to search for (can be a case, csv of cases, general string)
+  #   columns: A comma separated list of columns to retrieve (optional)
+  #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
+  ###############
+  def search_open(query, columns = RConfig.fogbugz.cases.default_columns, mine = false)
+    cases = search_all(query, columns, mine)
+    cases.reject! {|c| c['fOpen'] == 'false' }
+  end
+
+  ###############
+  # Search Closed
+  # -------------
+  # Execute a simple find. Returns only cases that are closed.
+  # Params:
+  #   query: A string to search for (can be a case, csv of cases, general string)
+  #   columns: A comma separated list of columns to retrieve (optional)
+  #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
+  ###############
+  def search_closed(query, columns = RConfig.fogbugz.cases.default_columns, mine = false)
+    cases = search_all(query, columns, mine)
+    cases.reject! {|c| c['fOpen'] == 'true' }
+  end
+
+  ###############
+  # Get List
+  # -------------
+  # Fetches a list of objects from FogBugz
+  # Params:
+  #   type: The type of object to list
+  #   options: Options specific to the list being fetched. These are FogBugz query options, see the XML API for info.
+  ###############
   def list(type, options = {})
     command = "list#{type.capitalize}".to_sym
     client = authenticate
     results = client.command(command, options)
     results = results[type][type.singularize] || []
+  end
+
+  ###############
+  # Resolve Cases
+  # -------------
+  # Takes an array of cases, and resolves them.
+  # Params:
+  #   cases: An array of cases
+  # Returns:
+  #   An array of bug IDs resolved
+  ###############
+  def resolve(cases, status = 45)
+    resolved = []
+    if RConfig.fogbugz.output.progress
+      progress cases do |c|
+        client.command(:resolve, :ixBug => c['ixBug'], :ixStatus => status)
+        resolved.push(c['ixBug'])
+      end
+    else
+      cases.each do |c|
+        client.command(:close, :ixBug => c['ixBug'], :ixStatus => status)
+        resolved.push(c['ixBug'])
+      end
+    end
+
+    resolved
+  end
+
+  ###############
+  # Close Cases
+  # -------------
+  # Takes an array of cases, and closes them.
+  # Params:
+  #   cases: An array of cases
+  # Returns:
+  #   An array of bug IDs closed
+  ###############
+  def close(cases)
+    closed = []
+    if RConfig.fogbugz.output.progress
+      progress cases do |c|
+        client.command(:close, :ixBug => c['ixBug'])
+        closed.push(c['ixBug'])
+      end
+    else
+      cases.each do |c|
+        client.command(:close, :ixBug => c['ixBug'])
+        closed.push(c['ixBug'])
+      end
+    end
+
+    closed
+  end
+
+  ###############
+  # Reopen Cases
+  # -------------
+  # Takes an array of cases, and reopens them.
+  # Params:
+  #   cases: An array of cases
+  # Returns:
+  #   An array of bug IDs reopened
+  ###############
+  def reopen(cases)
+    reopened = []
+    if RConfig.fogbugz.output.progress
+      progress cases do |c|
+        client.command(:reopen, :ixBug => c['ixBug'])
+        reopened.push(c['ixBug'])
+      end
+    else
+      cases.each do |c|
+        client.command(:reopen, :ixBug => c['ixBug'])
+        reopened.push(c['ixBug'])
+      end
+    end
+
+    reopened
+  end
+
+  ###############
+  # Show Cases
+  # -------------
+  # Takes an array of cases, and either prints them to a table, or if the array is empty, prints that information
+  # Params:
+  #   cases: An array of cases
+  ###############
+  def show_cases(cases)
+    p
+    unless cases.empty?
+      headings = ['BugID', 'Status', 'Title', 'Assigned To']
+      rows = []
+      cases.each do |c|
+        rows << [ c['ixBug'], c['sStatus'], c['sTitle'], c['sPersonAssignedTo'] ]
+      end
+      print_table headings, rows
+    else
+      p 'No open cases were found that match your query.'
+    end
+  end
+
+  ###############
+  # Print Table
+  # -------------
+  # Takes an array of headings and an array of rows, and prints a table
+  ###############
+  def print_table(headings, rows)
+    table = Terminal::Table.new do |t|
+      :headings => headings
+      :rows => rows
+    end
+    puts table
   end
