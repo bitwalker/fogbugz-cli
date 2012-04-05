@@ -240,8 +240,7 @@ private
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
   def search_open(query, columns = configatron.cases.default_columns, mine = false)
-    cases = search_all(query, columns, mine)
-    cases.reject! {|c| c['fOpen'] == 'false' }
+    cases = search_all(query + ' status:"active"', columns, mine)
     cases
   end
 
@@ -255,8 +254,7 @@ private
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
   def search_closed(query, columns = configatron.cases.default_columns, mine = false)
-    cases = search_all(query, columns, mine)
-    cases.reject! {|c| c['fOpen'] == 'true' }
+    cases = search_all(query+ ' -status:"active"', columns, mine)
     cases
   end
 
