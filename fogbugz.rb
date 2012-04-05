@@ -21,19 +21,18 @@ program :help_formatter, :compact
 command :search do |c|
   # Definition
   c.syntax      = 'fogbugz search [query]'
-  c.summary     = 'Search FogBugz for cases.'
-  c.description = 'Outputs a list of cases which match the provided query, or your current case list.'
-  # Options
-  c.option        '--open', 'Only return open cases'
+  c.summary     = 'Search FogBugz for cases, using FogBugz query syntax'
+  c.description = 'Outputs a list of cases which match the provided query, or your current case list. Negations are performed using ! instead of -.'
   # Examples
-  c.example       'Search for a case by title',      'fogbugz search "Test Title"'
-  c.example       'Search for a case by ID',         'fogbugz search 12'
-  c.example       'Search for multiple cases by ID', 'fogbugz search 12,25,556'
+  c.example       'Search for active case by title', 'fogbugz search title:"Test Title" !status:active'
+  c.example       'Search for a case by ID',         'fogbugz search ixBug:12'
+  c.example       'Search for multiple cases by ID', 'fogbugz search ixBug:12,25,556'
   # Behavior
   c.action do |args, options|
     args = args || [] # Empty args defaults to returning current active case list
+    query = args.join(' ').sub('!', '-')
     # Search
-    cases = options.open ? search_open(args.join) : search_all(args.join)
+    cases = options.open ? search_open(query) : search_all(query)
     show_cases cases
   end
 end
@@ -114,13 +113,16 @@ command :resolve do |c|
   c.example       'Resolve multiple by ID', 'fogbugz resolve 12, 25, 556'
   # Behavior
   c.action do |args, options|
+    args = args || []
+    query = args.join(' ').sub('!', '-')
+
     # Defaults
     options.default :close => false
     options.default :status => 45 # Fixed
 
     unless args.empty?
       # Get open cases assigned to me
-      cases = search_open(args.join, nil, true)
+      cases = search_open(query, nil, true)
 
       unless cases.empty?
         resolved = resolve cases, options.status
@@ -149,9 +151,12 @@ command :close do |c|
   c.example       'Close multiple by ID', 'fogbugz close 12, 25, 556'
   # Behavior
   c.action do |args, options|
+    args = args || []
+    query = args.join(' ').sub('!', '-')
+
     unless args.empty?
       # Get open cases assigned to me that match the query
-      cases = search_open(args.join, nil, true)
+      cases = search_open(query, nil, true)
 
       unless cases.empty?
         closed = close cases
@@ -176,8 +181,11 @@ command :reopen do |c|
   c.example       'Resolve multiple by ID', 'fogbugz reopen 12, 25, 556'
   # Behavior
   c.action do |args, options|
+    args = args || []
+    query = args.join(' ').sub('!', '-')
+
     unless args.empty?
-      cases = search_closed(args.join)
+      cases = search_closed(query)
       unless cases.empty?
         reopened = reopen cases
         print_message 'The following cases were reopened: ' + reopened.join, :success
@@ -228,7 +236,13 @@ private
     if columns.nil?
       columns = configatron.cases.default_columns
     end
-    results = client.command(:search, :q => query, :cols => columns)
+    results = nil
+    if mine
+      query = query + ' '
+      results = client.command(:search, :q => query, :cols => columns)
+    else
+      results = client.command(:search, :q => query, :cols => columns)
+    end
 
     unless results.nil?
       # Determine if this is a single result or many
@@ -273,7 +287,7 @@ private
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
   def search_closed(query, columns = configatron.cases.default_columns, mine = false)
-    cases = search_all(query+ ' -status:"active"', columns, mine)
+    cases = search_all(query + ' -status:"active"', columns, mine)
     cases
   end
 
