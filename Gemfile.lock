@@ -12,6 +12,7 @@ GEM
       activesupport (>= 2.2.2)
     ruby-fogbugz (0.1.1)
       crack
+    terminal-table (1.4.5)
 
 PLATFORMS
   ruby
@@ -22,3 +23,4 @@ DEPENDENCIES
   commander (>= 4.1.2)
   rconfig (>= 0.3.3)
   ruby-fogbugz (>= 0.1.1)
+  terminal-table
