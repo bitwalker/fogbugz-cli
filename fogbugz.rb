@@ -236,13 +236,7 @@ private
     if columns.nil?
       columns = configatron.cases.default_columns
     end
-    results = nil
-    if mine
-      query = query + ' '
-      results = client.command(:search, :q => query, :cols => columns)
-    else
-      results = client.command(:search, :q => query, :cols => columns)
-    end
+    results = client.command(:search, :q => query, :cols => columns)
 
     unless results.nil?
       # Determine if this is a single result or many
@@ -254,7 +248,7 @@ private
 
       # Filter for cases that belong to me if requested
       if mine
-        cases.reject! {|c| c['sEmailAssignedTo'] != @auth_email }
+        cases.reject! {|c| c[:sEmailAssignedTo] != @auth_email }
       end
 
       cases
