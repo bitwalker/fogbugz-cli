@@ -1,14 +1,16 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
+# CLI Tools
 require 'commander/import'
 require 'terminal-table'
+# API Wrapper
 require 'fogbugz'
+# Utility functions
 require 'active_support/inflector'
-require 'rconfig'
-
-# Import configuration
-RConfig.config_paths = ['#{APP_ROOT}/config']
+# Configuration
+require 'configatron'
+require './lib/config.rb'
 
 # Define program parameters
 program :name,           'FogBugz Command Line Client'
@@ -29,10 +31,9 @@ command :search do |c|
   c.example       'Search for multiple cases by ID', 'fogbugz search 12,25,556'
   # Behavior
   c.action do |args, options|
-    client = authenticate
     args = args || [] # Empty args defaults to returning current active case list
     # Search
-    cases = if options.open then search_all(args.join) else search_open(args.join) end
+    cases = options.open ? search_open(args.join) : search_all(args.join)
     show_cases cases
   end
 end
@@ -53,9 +54,7 @@ command :list do |c|
     options.default :resolved => false
     options.default :category => ''
 
-    client = authenticate
-
-    p
+    puts
     headings = [] # Used for printing a table of results
     rows = [] # Used for printing a table of results
     list_options = {}
@@ -101,9 +100,7 @@ command :resolve do |c|
     options.default :close => false
     options.default :status => 45 # Fixed
 
-    client = authenticate
-
-    p
+    puts
     unless args.empty?
       # Get open cases assigned to me
       cases = search_open(args.join, nil, true)
@@ -128,16 +125,14 @@ command :close do |c|
   # Definition
   c.syntax      = 'fogbugz close [query]'
   c.summary     = 'Close all cases that match a given query, and are assigned to you.'
-  c.description = 'Searches for any cases that match a given criteria, and resolves any matches that belong to you.'
+  c.description = 'Searches for any cases that match a given criteria, and closes any cases that belong to you and have been resolved.'
   # Examples
   c.example       'Close by title',       'fogbugz close "Test Title"'
   c.example       'Close by ID',          'fogbugz close 12'
   c.example       'Close multiple by ID', 'fogbugz close 12, 25, 556'
   # Behavior
   c.action do |args, options|
-    client = authenticate
-
-    p
+    puts
     unless args.empty?
       # Get open cases assigned to me that match the query
       cases = search_open(args.join, nil, true)
@@ -165,8 +160,7 @@ command :reopen do |c|
   c.example       'Resolve multiple by ID', 'fogbugz reopen 12, 25, 556'
   # Behavior
   c.action do |args, options|
-    client = authenticate
-
+    puts
     unless args.empty?
       cases = search_closed(args.join)
       unless cases.empty?
@@ -189,9 +183,9 @@ private
   # Authenticate fogbugz client to server. Cache auth token for reuse.
   ###############
   def authenticate
-    @fogbugz_url = RConfig.fogbugz.server.address || ask("What is the URL of your FogBugz server?")
-    @auth_email  = RConfig.fogbugz.user.email     || ask("What is your FogBugz email?")
-    @auth_pass   = RConfig.fogbugz.user.password  || ask("What is your FogBugz password?")
+    @fogbugz_url = configatron.server.address || ask("What is the URL of your FogBugz server?")
+    @auth_email  = configatron.user.email     || ask("What is your FogBugz email?")
+    @auth_pass   = configatron.user.password  || ask("What is your FogBugz password?")
 
     # Cache the authentication token
     if @token.nil?
@@ -213,8 +207,12 @@ private
   #   columns: A comma separated list of columns to retrieve (optional)
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search_all(query, columns = RConfig.fogbugz.cases.default_columns, mine = false)
+  def search_all(query, columns = configatron.cases.default_columns, mine = false)
     client = authenticate
+    # Ensure that columns is not nil
+    if columns.nil?
+      columns = configatron.cases.default_columns
+    end
     results = client.command(:search, :q => query, :cols => columns)
 
     unless results.nil?
@@ -228,9 +226,9 @@ private
       # Filter for cases that belong to me if requested
       if mine
         cases.reject! {|c| c['sEmailAssignedTo'] != @auth_email }
-      else
-        cases
       end
+
+      cases
     else
       []
     end
@@ -245,9 +243,10 @@ private
   #   columns: A comma separated list of columns to retrieve (optional)
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search_open(query, columns = RConfig.fogbugz.cases.default_columns, mine = false)
+  def search_open(query, columns = configatron.cases.default_columns, mine = false)
     cases = search_all(query, columns, mine)
     cases.reject! {|c| c['fOpen'] == 'false' }
+    cases
   end
 
   ###############
@@ -259,9 +258,10 @@ private
   #   columns: A comma separated list of columns to retrieve (optional)
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search_closed(query, columns = RConfig.fogbugz.cases.default_columns, mine = false)
+  def search_closed(query, columns = configatron.cases.default_columns, mine = false)
     cases = search_all(query, columns, mine)
     cases.reject! {|c| c['fOpen'] == 'true' }
+    cases
   end
 
   ###############
@@ -289,8 +289,10 @@ private
   #   An array of bug IDs resolved
   ###############
   def resolve(cases, status = 45)
+    client = authenticate
+
     resolved = []
-    if RConfig.fogbugz.output.progress
+    if configatron.output.progress
       progress cases do |c|
         client.command(:resolve, :ixBug => c['ixBug'], :ixStatus => status)
         resolved.push(c['ixBug'])
@@ -315,8 +317,10 @@ private
   #   An array of bug IDs closed
   ###############
   def close(cases)
+    client = authenticate
+
     closed = []
-    if RConfig.fogbugz.output.progress
+    if configatron.output.progress
       progress cases do |c|
         client.command(:close, :ixBug => c['ixBug'])
         closed.push(c['ixBug'])
@@ -341,8 +345,10 @@ private
   #   An array of bug IDs reopened
   ###############
   def reopen(cases)
+    client = authenticate
+
     reopened = []
-    if RConfig.fogbugz.output.progress
+    if configatron.output.progress
       progress cases do |c|
         client.command(:reopen, :ixBug => c['ixBug'])
         reopened.push(c['ixBug'])
