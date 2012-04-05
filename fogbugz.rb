@@ -14,7 +14,7 @@ require './lib/config.rb'
 
 # Define program parameters
 program :name,           'FogBugz Command Line Client'
-program :version,        '1.3.0'
+program :version,        '1.5.0'
 program :description,    'Manage FogBugz cases from the command line. Ideal for batch processing.'
 program :help_formatter, :compact
  
