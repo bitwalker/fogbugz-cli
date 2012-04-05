@@ -19,16 +19,28 @@ flag (fogbugz list --help, for example).
 
   fogbugz search 12
 
-    "12 - Active - This is the case title - Assigned To: Paul Schoenfelder"
+    +-------+--------+------------------------+-------------------+
+    | BugID | Status | Title                  | Assigned To       |
+    +-------+--------+------------------------+-------------------+
+    | 12    | Active | This is the case title | Paul Schoenfelder |
+    +-------+--------+------------------------+-------------------+
 
   fogbugz search 12, 13
 
-    "12 - Active - This is the case title - Assigned To: Paul Schoenfelder"
-    "13 - Resolved (Fixed) - This one was a no-brainer - Assigned To: Paul Schoenfelder"
+    +-------+--------+------------------------+--------------------------------+
+    | BugID | Status           | Title                     | Assigned To       |
+    +-------+--------+------------------------+--------------------------------+
+    | 12    | Active           | This is the case title    | Paul Schoenfelder |
+    | 13    | Resolved (Fixed) | This one was a no-brainer | Paul Schoenfelder |
+    +-------+--------+------------------------+--------------------------------+
 
   fogbugz search no-brainer
 
-    "13 - Resolved (Fixed) - This one was a no-brainer - Assigned To: Paul Schoenfelder"
+    +-------+------------------+---------------------------+-------------------+
+    | BugID | Status           | Title                     | Assigned To       |
+    +-------+------------------+---------------------------+-------------------+
+    | 13    | Resolved (Fixed) | This one was a no-brainer | Paul Schoenfelder |
+    +-------+------------------+---------------------------+-------------------+
 
 
 == Requirements
@@ -38,7 +50,7 @@ flag (fogbugz list --help, for example).
 * activesupport
 * commander
 * ruby-fogbugz
-* rconfig
+* configatron
 
 == TODO
 
