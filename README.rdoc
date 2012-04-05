@@ -5,6 +5,8 @@ wrapper. It's also great if you want a quick list of your current tasks, or a qu
 See the output of fogbugz --help for details. You can get additional help on individual commands by adding the --help
 flag (fogbugz list --help, for example).
 
+See this post for information on valid search syntax: http://fogbugz.stackexchange.com/questions/4399/
+
 == Features
 
 * Search for cases
