@@ -25,8 +25,8 @@ command :search do |c|
   c.description = 'Outputs a list of cases which match the provided query, or your current case list. Negations are performed using ! instead of -.'
   # Examples
   c.example       'Search for active case by title', 'fogbugz search title:"Test Title" !status:active'
-  c.example       'Search for a case by ID',         'fogbugz search ixBug:12'
-  c.example       'Search for multiple cases by ID', 'fogbugz search ixBug:12,25,556'
+  c.example       'Search for a case by ID',         'fogbugz search 12'
+  c.example       'Search for multiple cases by ID', 'fogbugz search 12,25,556'
   # Behavior
   c.action do |args, options|
     args = args || [] # Empty args defaults to returning current active case list
