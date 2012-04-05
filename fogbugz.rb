@@ -32,7 +32,7 @@ command :search do |c|
     args = args || [] # Empty args defaults to returning current active case list
     query = args.join(' ').sub('!', '-')
     # Search
-    cases = options.open ? search_open(query) : search_all(query)
+    cases = search_all(query)
     show_cases cases
   end
 end
@@ -236,22 +236,28 @@ private
     if columns.nil?
       columns = configatron.cases.default_columns
     end
-    results = client.command(:search, :q => query, :cols => columns)
+
+    results = nil
+    if mine
+      results = client.command(:search, :q => query + ' assignedto:me', :cols => columns)
+    else
+      results = client.command(:search, :q => query, :cols => columns)
+    end
 
     unless results.nil?
-      # Determine if this is a single result or many
-      # and ensure that the result always an array
-      cases = results['cases']['case'] || []
-      if cases.is_a? Hash
-        cases = [].push(cases)
-      end
+      unless results['error'].nil?
+        print_message results['error'], :error
+        []
+      else
+        # Determine if this is a single result or many
+        # and ensure that the result always an array
+        cases = results['cases']['case'] || []
+        if cases.is_a? Hash
+          cases = [].push(cases)
+        end
 
-      # Filter for cases that belong to me if requested
-      if mine
-        cases.reject! {|c| c[:sEmailAssignedTo] != @auth_email }
+        cases
       end
-
-      cases
     else
       []
     end
