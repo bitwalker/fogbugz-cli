@@ -54,7 +54,6 @@ command :list do |c|
     options.default :resolved => false
     options.default :category => ''
 
-    puts
     headings = [] # Used for printing a table of results
     rows = [] # Used for printing a table of results
     list_options = {}
@@ -74,10 +73,10 @@ command :list do |c|
         end
         print_table ['Status', 'StatusID', 'CategoryID'], rows
       else
-        p "This type of list is not supported yet."
+        print_message "This type of list is not supported yet.", :error
       end
     else
-      p "You should specify a list type."
+      print_message "You should specify a list type.", :warn
     end
   end
 end
@@ -100,23 +99,22 @@ command :resolve do |c|
     options.default :close => false
     options.default :status => 45 # Fixed
 
-    puts
     unless args.empty?
       # Get open cases assigned to me
       cases = search_open(args.join, nil, true)
 
       unless cases.empty?
         resolved = resolve cases, options.status
-        p 'The following cases were resolved: ' + resolved.join
+        print_message 'The following cases were resolved: ' + resolved.join, :success
         if options.close
           closed = close cases
-          p 'The following cases were closed: ' + closed.join
+          print_message 'The following cases were closed: ' + closed.join, :success
         end
       else
-        p 'No open cases were found that match that query.'
+        print_message 'No open cases were found that match that query.', :warn
       end
     else
-      p 'You must provide a search query.'
+      print_message 'You must provide a search query.', :error
     end
   end
 end
@@ -132,19 +130,18 @@ command :close do |c|
   c.example       'Close multiple by ID', 'fogbugz close 12, 25, 556'
   # Behavior
   c.action do |args, options|
-    puts
     unless args.empty?
       # Get open cases assigned to me that match the query
       cases = search_open(args.join, nil, true)
 
       unless cases.empty?
         closed = close cases
-        p 'The following cases were closed: ' + closed.join
+        print_message 'The following cases were closed: ' + closed.join, :success
       else
-        p 'No open cases were found that match that query.'
+        print_message 'No open cases were found that match that query.', :warn
       end
     else
-      p 'You must provide a search query.'
+      print_message 'You must provide a search query.', :error
     end
   end
 end
@@ -160,17 +157,16 @@ command :reopen do |c|
   c.example       'Resolve multiple by ID', 'fogbugz reopen 12, 25, 556'
   # Behavior
   c.action do |args, options|
-    puts
     unless args.empty?
       cases = search_closed(args.join)
       unless cases.empty?
         reopened = reopen cases
-        p 'The following cases were reopened: ' + reopened.join
+        print_message 'The following cases were reopened: ' + reopened.join, :success
       else
-        p 'No closed cases were found that match that query.'
+        print_message 'No closed cases were found that match that query.', :warn
       end
     else
-      p 'You must provide a search query.'
+      print_message 'You must provide a search query.', :error
     end
   end
 end
@@ -375,12 +371,22 @@ private
     unless cases.empty?
       headings = ['BugID', 'Status', 'Title', 'Assigned To']
       rows = []
-      cases.each do |c|
-        rows << [ c['ixBug'], c['sStatus'], c['sTitle'], c['sPersonAssignedTo'] ]
+      if configatron.output.colorize
+        cases.each do |c|
+          status = c['sStatus']
+          if status == 'Active'
+            status = colorize(status, configatron.colors.green)
+          end
+          rows << [ c['ixBug'], status, c['sTitle'], c['sPersonAssignedTo'] ]
+        end
+      else
+        cases.each do |c|
+          rows << [ c['ixBug'], c['sStatus'], c['sTitle'], c['sPersonAssignedTo'] ]
+        end
       end
       print_table headings, rows
     else
-      p 'No open cases were found that match your query.'
+      print_message 'No open cases were found that match your query.', :warn
     end
   end
 
@@ -392,4 +398,40 @@ private
   def print_table(headings, rows)
     table = Terminal::Table.new :headings => headings, :rows => rows
     puts table
+  end
+
+  ###############
+  # Print Message
+  # -------------
+  # Prints a message to the terminal, colored according to it's type
+  # Params:
+  #   text: The message to print
+  #   type: Choose one => [:error, :warn, :success, :info]
+  ###############
+  def print_message(text, type)
+    puts
+    if configatron.output.colorize
+      case type
+      when :error
+        puts colorize(text, configatron.colors.red)
+      when :warn
+        puts colorize(text, configatron.colors.yellow)
+      when :success
+        puts colorize(text, configatron.colors.green)
+      when :info
+        puts text
+      end
+    else
+      puts text
+    end
+  end
+
+  ###############
+  # Colorize
+  # -------------
+  # Takes a string of text and adds ANSI color code sequences for colorized output in a terminal
+  ###############
+  def colorize(text, color_code)
+    reset = "e[0m" # Resets color to default for all text after the colorized text
+    "#{color_code}#{text}#{reset}"
   end
