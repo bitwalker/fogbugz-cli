@@ -30,7 +30,7 @@ command :search do |c|
   # Behavior
   c.action do |args, options|
     args = args || [] # Empty args defaults to returning current active case list
-    query = args.join(' ').sub('!', '-')
+    query = args.join(' ').gsub('!', '-')
     # Search
     cases = search_all(query)
     show_cases cases
@@ -114,7 +114,7 @@ command :resolve do |c|
   # Behavior
   c.action do |args, options|
     args = args || []
-    query = args.join(' ').sub('!', '-')
+    query = args.join(' ').gsub('!', '-')
 
     # Defaults
     options.default :close => false
@@ -152,7 +152,7 @@ command :close do |c|
   # Behavior
   c.action do |args, options|
     args = args || []
-    query = args.join(' ').sub('!', '-')
+    query = args.join(' ').gsub('!', '-')
 
     unless args.empty?
       # Get open cases assigned to me that match the query
@@ -182,7 +182,7 @@ command :reopen do |c|
   # Behavior
   c.action do |args, options|
     args = args || []
-    query = args.join(' ').sub('!', '-')
+    query = args.join(' ').gsub('!', '-')
 
     unless args.empty?
       cases = search_closed(query)
