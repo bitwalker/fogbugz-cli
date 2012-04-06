@@ -21,12 +21,12 @@ program :help_formatter, :compact
 command :search do |c|
   # Definition
   c.syntax      = 'fogbugz search [query]'
-  c.summary     = 'Search FogBugz for cases, using FogBugz query syntax'
+  c.summary     = 'Search FogBugz for cases, using FogBugz query syntax.'
   c.description = 'Outputs a list of cases which match the provided query, or your current case list. Negations are performed using ! instead of -.'
   # Examples
-  c.example       'Search for active case by title', 'fogbugz search title:"Test Title" !status:active'
-  c.example       'Search for a case by ID',         'fogbugz search 12'
-  c.example       'Search for multiple cases by ID', 'fogbugz search 12,25,556'
+  c.example       'Search for inactive cases by title', 'fogbugz search title:"Test Title" !status:active'
+  c.example       'Search for a case by ID',            'fogbugz search ixbug:12'
+  c.example       'Search for multiple cases by ID',    'fogbugz search 12,25,556'
   # Behavior
   c.action do |args, options|
     args = args || [] # Empty args defaults to returning current active case list
@@ -40,11 +40,17 @@ end
 command :list do |c|
   # Definition
   c.syntax      = 'fogbugz list [type]'
-  c.summary     = 'Display a list of [projects, categories, people, statuses]'
+  c.summary     = 'Display a list of [projects, categories, people, statuses, areas, wikis, mailboxes]'
   c.description = 'Outputs the contents of the list in a easy to read format'
   # Options
   c.option        '--category ID', String, 'For statuses only, filter by a category.'
-  c.option        '--resolved', 'For statuses only, only list resolved statuses.'
+  c.option        '--resolved',            'For statuses only, only list resolved statuses.'
+  c.option        '--all',                 'For people only, list all user records'
+  c.option        '--include-active',      'For people only, include active users. With no options, this is the default behavior.'
+  c.option        '--include-normal',      'For people only, include normal users. With no options, this is the default behavior.'
+  c.option        '--include-deleted',     'For people only, include deleted users'
+  c.option        '--include-community',   'For people only, include community users'
+  c.option        '--include-virtual',     'For people only, include virtual users'
   # Examples
   c.example       'List all active users', 'fogbugz list people'
   # Behavior
@@ -72,12 +78,35 @@ command :list do |c|
         end
         print_table ['Status', 'StatusID', 'CategoryID'], rows
       when :people
-        people = list(:people)
+        unless options.all
+          if options.include_active
+            list_options['fIncludeActive']  = 1
+          end
+          if options.include_normal
+            list_options['fIncludeNormal']  = 1
+          end
+          if options.include_deleted
+            list_options['fIncludeDeleted'] = 1
+          end
+          if options.include_community
+            list_options['fIncludeCommunity'] = 1
+          end
+          if options.include_virtual
+            list_options['fIncludeVirtual'] = 1
+          end
+        else
+          list_options['fIncludeActive']    = 1
+          list_options['fIncludeNormal']    = 1
+          list_options['fIncludeDeleted']   = 1
+          list_options['fIncludeCommunity'] = 1
+          list_options['fIncludeVirtual']   = 1
+        end
+        people = list(:people, list_options)
         people.each do |person|
           email = person['sEmail'].length > 45 ? person['sEmail'][0..45] + '...' : person['sEmail']
-          rows << [ person['sFullName'], email, person['fAdministrator'], person['dtLastActivity'] ]
+          rows << [ person['sFullName'], email, person['fAdministrator'], person['fDeleted'], person['fVirtual'], person['dtLastActivity'] ]
         end
-        print_table ['Name', 'Email', 'Admin?', 'Last Active'], rows
+        print_table ['Name', 'Email', 'Admin?', 'Deleted?', 'Virtual?', 'Last Active'], rows
       when :projects
         projects = list(:projects)
         projects.each do |project|
@@ -90,6 +119,26 @@ command :list do |c|
           rows << [ category['ixCategory'], category['sPlural'] ]
         end
         print_table ['ID', 'Category'], rows
+      when :areas
+        areas = list(:areas)
+        areas.each do |area|
+          rows << [ area['ixArea'], area['sArea'], area['sProject'], ]
+        end
+        print_table ['ID', 'Area', 'Associated Project']
+      when :wikis
+        wikis = list(:wikis)
+        wikis.each do |wiki|
+          tagline = wiki['sTagLineHTML'] || 'N/A'
+          tagline = tagline.length > 45 ? tagline[0..45] + '...' : tagline
+          rows << [ wiki['ixWiki'], wiki['sWiki'], tagline ]
+        end
+        print_table ['ID', 'Wiki', 'Tag Line'], rows
+      when :mailboxes
+        mailboxes = list(:mailboxes)
+        mailboxes.each do |mailbox|
+          rows << [ mailbox['ixMailbox'], mailbox['sEmail'], mailbox['sEmailUser'] ]
+        end
+        print_table ['ID', 'Mailbox', 'User'], rows
       else
         print_message "This type of list is not supported yet.", :error
       end
