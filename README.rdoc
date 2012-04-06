@@ -10,7 +10,7 @@ See this post for information on valid search syntax: http://fogbugz.stackexchan
 == Features
 
 * Search for cases
-* List objects (people, projects, categories, statuses)
+* List objects (people, projects, categories, statuses, areas, wikis, mailboxes)
 * Resolve cases (with an additional flag to Resolve and Close in one shot)
 * Close cases
 * Reopen cases
