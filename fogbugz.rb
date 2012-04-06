@@ -279,7 +279,7 @@ private
   #   columns: A comma separated list of columns to retrieve (optional)
   #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search_all(query, columns = configatron.cases.default_columns, mine = false)
+  def search_all(query, columns = configatron.cases.default_columns)
     client = authenticate
     # Ensure that columns is not nil
     if columns.nil?
@@ -287,11 +287,7 @@ private
     end
 
     results = nil
-    if mine
-      results = client.command(:search, :q => query + ' assignedto:me', :cols => columns)
-    else
-      results = client.command(:search, :q => query, :cols => columns)
-    end
+    results = client.command(:search, :q => query, :cols => columns)
 
     unless results.nil?
       unless results['error'].nil?
@@ -319,9 +315,8 @@ private
   # Params:
   #   query: A string to search for (can be a case, csv of cases, general string)
   #   columns: A comma separated list of columns to retrieve (optional)
-  #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search_open(query, columns = configatron.cases.default_columns, mine = false)
+  def search_open(query, columns = configatron.cases.default_columns)
     cases = search_all(query + ' status:"active"', columns, mine)
     cases
   end
@@ -333,9 +328,8 @@ private
   # Params:
   #   query: A string to search for (can be a case, csv of cases, general string)
   #   columns: A comma separated list of columns to retrieve (optional)
-  #   mine: A boolean flag indicating whether to return only cases that are assigned to you (optional, defaulting to false)
   ###############
-  def search_closed(query, columns = configatron.cases.default_columns, mine = false)
+  def search_closed(query, columns = configatron.cases.default_columns)
     cases = search_all(query + ' -status:"active"', columns, mine)
     cases
   end
