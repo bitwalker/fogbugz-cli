@@ -536,7 +536,7 @@ private
   ###############
   def yep_nope(&block)
     checkmark = "\u2713"
-    nopemark  = "\u2718"
+    nopemark  = "\u2717"
     yep = block.call()
     if yep
       if configatron.output.colorize
