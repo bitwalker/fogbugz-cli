@@ -535,9 +535,8 @@ private
   # Takes a block returning a boolean, and based on the result, returns a checkmark/crossmark
   ###############
   def yep_nope(&block)
-    windows   = RUBY_PLATFORM =~ /win32|mingw32/
-    checkmark = windows ? 'yep'  : '\u2713'
-    nopemark  = windows ? 'nope' : '\u2718'
+    checkmark = "\u2713"
+    nopemark  = "\u2718"
     yep = block.call()
     if yep
       if configatron.output.colorize
