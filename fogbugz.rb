@@ -12,6 +12,14 @@ require 'active_support/inflector'
 require 'configatron'
 require './lib/config.rb'
 
+if configatron.output.colorize and RUBY_PLATFORM =~ /win32|mingw32/
+  begin
+    require 'Win32/Console/ANSI'
+  rescue LoadError
+    puts 'WARNING: In order to use colorized output on Windows, you must install the win32console gem.'
+  end
+end
+
 # Define program parameters
 program :name,           'FogBugz Command Line Client'
 program :version,        '1.5.0'
