@@ -13,14 +13,15 @@ configatron.output.colorize = false
 configatron.output.clean    = false # Clean output for piping/export (renders as comma-separated, "-quoted values)
 
 # Colors
-configatron.colors.green   = "e[32m"
-configatron.colors.yellow  = "e[33m"
-configatron.colors.red     = "e[31m"
-configatron.colors.blue    = "e[34m"
-configatron.colors.magenta = "e[35m"
-configatron.colors.cyan    = "e[36m"
-configatron.colors.white   = "e[37m"
-configatron.colors.black   = "e[30m"
+#  Bright
+configatron.colors.green   = "1;32"
+configatron.colors.yellow  = "1;33"
+configatron.colors.red     = "1;31"
+configatron.colors.blue    = "1;34"
+configatron.colors.magenta = "1;35"
+configatron.colors.cyan    = "1;36"
+configatron.colors.white   = "1;37"
+configatron.colors.black   = "1;30"
 
 # Cases
 configatron.cases.default_columns = "ixBug,ixBugParent,ixBugChildren,fOpen,sTitle,sPersonAssignedTo,sEmailAssignedTo,sStatus"
