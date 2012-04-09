@@ -19,7 +19,7 @@ See this post for information on valid search syntax: http://fogbugz.stackexchan
 
 == Examples
 
-  fogbugz search 12
+  fogbugz search ixbug:12
 
     +-------+--------+------------------------+-------------------+
     | BugID | Status | Title                  | Assigned To       |
@@ -36,7 +36,7 @@ See this post for information on valid search syntax: http://fogbugz.stackexchan
     | 13    | Resolved (Fixed) | This one was a no-brainer | Paul Schoenfelder |
     +-------+--------+------------------------+--------------------------------+
 
-  fogbugz search no-brainer
+  fogbugz search title:no-brainer
 
     +-------+------------------+---------------------------+-------------------+
     | BugID | Status           | Title                     | Assigned To       |
