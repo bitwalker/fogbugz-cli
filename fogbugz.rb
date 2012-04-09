@@ -171,14 +171,14 @@ command :resolve do |c|
 
     unless args.empty?
       # Get open cases assigned to me
-      cases = search_open(query, nil, true)
+      cases = search_open(query)
 
       unless cases.empty?
         resolved = resolve cases, options.status
-        print_message 'The following cases were resolved: ' + resolved.join, :success
+        print_message 'The following cases were resolved: ' + resolved.join(', '), :success
         if options.close
           closed = close cases
-          print_message 'The following cases were closed: ' + closed.join, :success
+          print_message 'The following cases were closed: ' + closed.join(', '), :success
         end
       else
         print_message 'No open cases were found that match that query.', :warn
@@ -205,7 +205,7 @@ command :close do |c|
 
     unless args.empty?
       # Get open cases assigned to me that match the query
-      cases = search_open(query, nil, true)
+      cases = search_open(query)
 
       unless cases.empty?
         closed = close cases
@@ -317,7 +317,7 @@ private
   #   columns: A comma separated list of columns to retrieve (optional)
   ###############
   def search_open(query, columns = configatron.cases.default_columns)
-    cases = search_all(query + ' status:"active"', columns, mine)
+    cases = search_all(query + ' status:"active"', columns)
     cases
   end
 
@@ -330,7 +330,7 @@ private
   #   columns: A comma separated list of columns to retrieve (optional)
   ###############
   def search_closed(query, columns = configatron.cases.default_columns)
-    cases = search_all(query + ' -status:"active"', columns, mine)
+    cases = search_all(query + ' -status:"active"', columns)
     cases
   end
 
@@ -369,7 +369,7 @@ private
       end
     else
       cases.each do |c|
-        client.command(:close, :ixBug => c['ixBug'], :ixStatus => status)
+        client.command(:resolve, :ixBug => c['ixBug'], :ixStatus => status)
         resolved.push(c['ixBug'])
       end
     end
