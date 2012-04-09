@@ -9,7 +9,7 @@ configatron.user.password = 'testpass'
 
 # Output
 configatron.output.progress = true
-configatron.output.colorize = false
+configatron.output.colorize = true # Colorize output
 configatron.output.clean    = false # Clean output for piping/export (renders as comma-separated, "-quoted values)
 
 # Colors
