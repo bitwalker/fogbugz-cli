@@ -518,7 +518,6 @@ private
   # Takes a string of text and adds ANSI color code sequences for colorized output in a terminal
   ###############
   def colorize(text, color_code)
-    bg = "30" # Black
     reset = "\033[0m" # Resets color to default for all text after the colorized text
-    "\033[#{color_code};#{bg}m#{text}#{reset}"
+    "\033[#{color_code}m#{text}#{reset}"
   end
