@@ -112,7 +112,10 @@ command :list do |c|
         people = list(:people, list_options)
         people.each do |person|
           email = person['sEmail'].length > 45 ? person['sEmail'][0..45] + '...' : person['sEmail']
-          rows << [ person['sFullName'], email, person['fAdministrator'], person['fDeleted'], person['fVirtual'], person['dtLastActivity'] ]
+          deleted = yep_nope { person['fDeleted'] == 'true' }
+          virtual = yep_nope { person['fVirtual'] == 'true' }
+          admin   = yep_nope { person['fAdministrator'] == 'true' }
+          rows << [ person['sFullName'], email, admin, deleted, virtual, person['dtLastActivity'] ]
         end
         print_table ['Name', 'Email', 'Admin?', 'Deleted?', 'Virtual?', 'Last Active'], rows
       when :projects
@@ -458,6 +461,10 @@ private
           status = c['sStatus']
           if status == 'Active'
             status = colorize(status, configatron.colors.green)
+          elsif status =~ /Resolved/
+            status = colorize(status, configatron.colors.cyan)
+          elsif status =~ /Closed/
+            status = colorize(status, configatron.colors.magenta)
           end
           rows << [ c['ixBug'], status, c['sTitle'], c['sPersonAssignedTo'] ]
         end
@@ -520,4 +527,29 @@ private
   def colorize(text, color_code)
     reset = "\033[0m" # Resets color to default for all text after the colorized text
     "\033[#{color_code}m#{text}#{reset}"
+  end
+
+  ###############
+  # YepNope
+  # -------------
+  # Takes a block returning a boolean, and based on the result, returns a checkmark/crossmark
+  ###############
+  def yep_nope(&block)
+    windows   = RUBY_PLATFORM =~ /win32|mingw32/
+    checkmark = windows ? 'yep'  : '\u2713'
+    nopemark  = windows ? 'nope' : '\u2718'
+    yep = block.call()
+    if yep
+      if configatron.output.colorize
+        colorize(checkmark, configatron.colors.green)
+      else
+        checkmark
+      end
+    else # Nope
+      if configatron.output.colorize
+        colorize(nopemark, configatron.colors.red)
+      else
+        nopemark
+      end
+    end
   end
