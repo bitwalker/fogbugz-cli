@@ -45,6 +45,69 @@ command :search do |c|
   end
 end
 
+command :show do |c|
+  # Definition
+  c.syntax      = 'fogbugz show [case]'
+  c.summary     = 'Show details about a specific case.'
+  c.description = 'Outputs detailed information about a case for easy reading.'
+  # Examples
+  c.example       'Search for case by ID', 'fogbugz show 12'
+  # Behavior
+  c.action do |args, options|
+    args = args || []
+    query = args.join
+
+    unless /^[\d]+$/.match(query).nil?
+      cases = search_all("ixbug:#{query}")
+      unless cases.empty?
+        the_case = cases.first()
+        # Format assignedto email
+        email = the_case['sEmailAssignedTo'].nil? ? '' : "<#{the_case['sEmailAssignedTo']}>"
+        # Format Tags
+        tags  = the_case['tags'].nil? ? 'None' : the_case['tags'].join
+        # Format Status
+        status = the_case['sStatus']
+        if status == 'Active'
+          status = colorize(status, configatron.colors.green)
+        elsif status =~ /Resolved/
+          status = colorize(status, configatron.colors.cyan)
+        elsif status =~ /Closed/
+          status = colorize(status, configatron.colors.magenta)
+        end
+        # Format latest text
+        latest_text = format_as_multiline the_case['sLatestTextSummary'], 60
+        # Define rows
+        rows = [
+          ['BugID', the_case['ixBug']],
+          ['Parent BugID', the_case['ixBugParent'] || 'None'],
+          ['Child BugIDs', the_case['ixBugChildren'] || 'None'],
+          ['Project', the_case['sProject']],
+          ['Category', the_case['sCategory']],
+          ['Tags', tags],
+          ['', ''],
+          ['Assigned To', "#{the_case['sPersonAssignedTo']} #{email}"],
+          ['Customer Email', the_case['sCustomerEmail'] || 'None'],
+          ['', ''],
+          ['Estimated Hours (Original)', the_case['hrsOrigEst']],
+          ['Estimated Hours (Current)', the_case['hrsCurrEst']],
+          ['Hours Elapsed', the_case['hrsElapsed']],
+          ['', ''],
+          ['Subscribed?', yep_nope { the_case['fSubscribe'] == 'true' }],
+          ['Status', status],
+          ['Title', colorize(the_case['sTitle'], configatron.colors.yellow)],
+          ['Latest Information', latest_text]
+        ]
+        table = Terminal::Table.new :title => "Case Information", :rows => rows
+        puts table
+      else
+        print_message 'There were no cases found for that ID.', :warn
+      end
+    else
+      print_message 'That is not a valid case ID.', :error
+    end
+  end
+end
+
 command :list do |c|
   # Definition
   c.syntax      = 'fogbugz list [type]'
@@ -552,5 +615,25 @@ private
       else
         nopemark
       end
+    end
+  end
+
+  ###############
+  # Format As Multiline
+  # -------------
+  # Takes a string of text, and a column width, and ensures that the line breaks at that width (inserts a newline char)
+  ###############
+  def format_as_multiline(text, width)
+    text = text.gsub("\n", " ")
+    unless text.length <= width
+      formatted = []
+      lastIndex = 0
+      width.step(text.length + width, width) do |i|
+        formatted.push(text[lastIndex..i])
+        lastIndex = i
+      end
+      formatted.join("\n")
+    else
+      text
     end
   end

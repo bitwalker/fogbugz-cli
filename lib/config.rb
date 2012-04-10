@@ -24,4 +24,6 @@ configatron.colors.white   = "1;37"
 configatron.colors.black   = "1;30"
 
 # Cases
-configatron.cases.default_columns = "ixBug,ixBugParent,ixBugChildren,fOpen,sTitle,sPersonAssignedTo,sEmailAssignedTo,sStatus"
+cols =        "ixBug,ixBugParent,ixBugChildren,sStatus,sTitle,sLatestTextSummary,sProject,sPersonAssignedTo,"
+cols = cols + "sEmailAssignedTo,hrsOrigEst,hrsCurrEst,hrsElapsed,sCustomerEmail,sTicket,tags,sCategory,fSubscribed"
+configatron.cases.default_columns = cols
