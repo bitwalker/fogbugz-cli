@@ -217,6 +217,8 @@ command :close do |c|
     unless args.empty?
       # Get open cases assigned to me that match the query
       cases = search_all(query)
+      # Only close cases that are resolved
+      cases = cases.select {|c| c['sStatus'] =~ /Resolved/ }
 
       unless cases.empty?
         closed = close cases
@@ -399,9 +401,6 @@ private
   ###############
   def close(cases)
     client = authenticate
-
-    # Only close cases that are resolved
-    cases = cases.select {|c| c['sStatus'] =~ /Resolved/ }
 
     closed = []
     if configatron.output.progress
