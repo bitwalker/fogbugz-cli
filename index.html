@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Fogbugz Command Line Client by bitwalker</title>
+    
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Fogbugz Command Line Client</h1>
+        <p>Manage your FogBugz cases from the command line!</p>
+        <p class="view"><a href="https://github.com/bitwalker/fogbugz-cli">View the Project on GitHub <small>bitwalker/fogbugz-cli</small></a></p>
+        <ul>
+          <li><a href="https://github.com/bitwalker/fogbugz-cli/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/bitwalker/fogbugz-cli/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/bitwalker/fogbugz-cli">Fork On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>Built out of a desire to automate some FogBugz tasks, I've thrown this CLI together using the ruby-fogbugz
+wrapper. It's also great if you want a quick list of your current tasks, or a quick summary of any number of cases.
+See the output of <code>fogbugz --help</code> for details. You can get additional help on individual commands by adding the <code>--help</code>
+flag (<code>fogbugz list --help</code>, for example).</p>
+
+<p>See this post for information on valid search syntax: <a href="http://fogbugz.stackexchange.com/questions/4399/">http://fogbugz.stackexchange.com/questions/4399/</a></p>
+
+<h2>Features</h2>
+
+<ul>
+<li>Search for cases</li>
+<li>Show cases</li>
+<li>List objects (people, projects, categories, statuses, areas, wikis, mailboxes)</li>
+<li>Resolve cases (with an additional flag to Resolve and Close in one shot)</li>
+<li>Close cases</li>
+<li>Reopen cases</li>
+<li>Easy to use interface</li>
+<li>Easy configuration</li>
+</ul><h2>Examples</h2>
+
+<p><code>fogbugz search ixBug:12</code></p>
+
+<pre><code>+-------+--------+------------------------+-------------------+
+| BugID | Status | Title                  | Assigned To       |
++-------+--------+------------------------+-------------------+
+| 12    | Active | This is the case title | Paul Schoenfelder |
++-------+--------+------------------------+-------------------+
+</code></pre>
+
+<p><code>fogbugz search 12, 13</code></p>
+
+<pre><code>+-------+--------+---------+-----------------------------------------------+
+| BugID | Status           | Title                     | Assigned To       |
++-------+--------+---------+-----------------------------------------------+
+| 12    | Active           | This is the case title    | Paul Schoenfelder |
+| 13    | Resolved (Fixed) | This one was a no-brainer | Paul Schoenfelder |
++-------+--------+---------+-----------------------------------------------+
+</code></pre>
+
+<p><code>fogbugz search title:no-brainer</code></p>
+
+<pre><code>+-------+------------------+---------------------------+-------------------+
+| BugID | Status           | Title                     | Assigned To       |
++-------+------------------+---------------------------+-------------------+
+| 13    | Resolved (Fixed) | This one was a no-brainer | Paul Schoenfelder |
++-------+------------------+---------------------------+-------------------+
+</code></pre>
+
+<h2>Requirements</h2>
+
+<ul>
+<li>Ruby (built/tested on 1.9.3, and tested on 1.9.2-p290, planned support back to 1.8.7)</li>
+<li>RubyGems</li>
+<li>activesupport</li>
+<li>commander</li>
+<li>ruby-fogbugz</li>
+<li>configatron</li>
+</ul><h2>TODO</h2>
+
+<ul>
+<li>Additional configuration options for resolve, close, reopen</li>
+<li>Create case functionality</li>
+<li>Turn into gem</li>
+</ul><h2>Known Issues</h2>
+
+<ul>
+<li>None (Please report issues in the tracker if you come across them!)</li>
+</ul><h2>License</h2>
+
+<p>(The MIT License)</p>
+
+<p>Copyright (c) 2012 Paul Schoenfelder <a href="mailto:paulschoenfelder@gmail.com">paulschoenfelder@gmail.com</a></p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/bitwalker">bitwalker</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
